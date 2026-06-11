@@ -1,5 +1,3 @@
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbRZtiQRmrX0qBvNffls9IUGBLLHHQF4G4Xf8ZWo2lbkrPoVSXGLQ_2a6n_HlbDtkXVvw/exec";
-
 exports.handler = async function(event) {
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -13,12 +11,22 @@ exports.handler = async function(event) {
   }
 
   try {
-    let url = APPS_SCRIPT_URL;
+    // La URL de Apps Script viene en el body del request
+    const body = JSON.parse(event.body || "{}");
+    const appsScriptUrl = body.appsScriptUrl;
 
-    if (event.body) {
-      const body = JSON.parse(event.body);
-      const payload = encodeURIComponent(JSON.stringify(body));
-      url = APPS_SCRIPT_URL + "?payload=" + payload;
+    if (!appsScriptUrl || !appsScriptUrl.includes("script.google.com")) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ ok: false, error: "URL de Apps Script no válida" })
+      };
+    }
+
+    // Si hay payload (crear/editar/borrar), lo agregamos como parámetro
+    let url = appsScriptUrl;
+    if (body.payload) {
+      url = appsScriptUrl + "?payload=" + encodeURIComponent(JSON.stringify(body.payload));
     }
 
     const response = await fetch(url, {
@@ -28,11 +36,18 @@ exports.handler = async function(event) {
 
     const text = await response.text();
 
-    return {
-      statusCode: 200,
-      headers,
-      body: text
-    };
+    // Verificar que sea JSON válido
+    try {
+      JSON.parse(text);
+    } catch(e) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ ok: false, error: "Apps Script no devolvió JSON válido. Verifica que la implementación esté activa." })
+      };
+    }
+
+    return { statusCode: 200, headers, body: text };
 
   } catch (err) {
     return {
