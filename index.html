@@ -313,7 +313,7 @@ function renderAjustes(){
 function render(){
   var syncIcon=st.sincronizando?'<span class="spin" style="display:inline-flex">'+ICONS.refresh+'</span>':ICONS.cloud;
   var syncText=!apiConfigurada()?"Modo local":st.sincronizando?"Sincronizando…":"Conectado a Drive";
-  var h='<div class="hdr"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><div><p style="font-size:11px;letter-spacing:0.08em;color:var(--text3);text-transform:uppercase">Fiorella Eventos</p><p style="font-size:19px;font-weight:700">Movimientos 2026</p></div>'+
+  var h='<div class="hdr"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><div><p style="font-size:11px;letter-spacing:0.08em;color:var(--text3);text-transform:uppercase">Fiorella Eventos</p><p style="font-size:19px;font-weight:700">Movimientos 2026 v2</p></div>'+
     '<button class="sync-bar" onclick="sincronizar()">'+syncIcon+'<span>'+syncText+'</span></button></div>'+
     '<div class="tabs">'+tabBtn("nuevo","plus",(st.editFila!==null||st.editId!==null)?"Editar":"Nuevo")+tabBtn("historial","list","Historial")+tabBtn("resumen","chart","Resumen")+tabBtn("catalogos","folders","Catálogos")+tabBtn("ajustes","settings","Ajustes")+'</div></div>';
   var body=st.tab==="nuevo"?renderNuevo():st.tab==="historial"?renderHist():st.tab==="resumen"?renderResumen():st.tab==="catalogos"?renderCatalogos():renderAjustes();
