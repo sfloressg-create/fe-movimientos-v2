@@ -130,8 +130,11 @@ function guardarApiUrl(url){
 function sincronizar(){
   if(!apiConfigurada()){return;}
   st.sincronizando=true;render();
-  fetch(PROXY_URL)
-    .then(function(r){return r.json();})
+  fetch(PROXY_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({appsScriptUrl:API_URL})
+  }).then(function(r){return r.json();})
     .then(function(data){
       if(data.ok && data.movimientos){
         st.movs=data.movimientos.map(function(m){
@@ -149,7 +152,10 @@ function enviarAlSheet(accion,movimiento,fila){
   return fetch(PROXY_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({accion:accion,movimiento:movimiento,fila:fila})
+    body:JSON.stringify({
+      appsScriptUrl:API_URL,
+      payload:{accion:accion,movimiento:movimiento,fila:fila}
+    })
   })
   .then(function(r){return r.json();})
   .catch(function(err){
