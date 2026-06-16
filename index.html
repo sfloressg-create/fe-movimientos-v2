@@ -149,18 +149,24 @@ function sincronizar(){
 
 function enviarAlSheet(accion,movimiento,fila){
   if(!apiConfigurada())return Promise.resolve({ok:false,local:true});
+  var payload=JSON.stringify({accion:accion,movimiento:movimiento,fila:fila});
+  var url=API_URL+"?payload="+encodeURIComponent(payload);
+  // Intentamos primero con el proxy de Netlify
   return fetch(PROXY_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      appsScriptUrl:API_URL,
-      payload:{accion:accion,movimiento:movimiento,fila:fila}
-    })
+    body:JSON.stringify({appsScriptUrl:API_URL,payload:{accion:accion,movimiento:movimiento,fila:fila}})
   })
-  .then(function(r){return r.json();})
-  .catch(function(err){
-    console.log("proxy error:",err);
-    return {ok:false,error:String(err)};
+  .then(function(r){
+    if(!r.ok)throw new Error("proxy failed");
+    return r.json();
+  })
+  .catch(function(){
+    // Si el proxy falla, llamamos directo a Apps Script con no-cors
+    // Apps Script ejecuta aunque no podamos leer la respuesta
+    return fetch(url,{mode:"no-cors",redirect:"follow"})
+      .then(function(){return {ok:true,nocors:true};})
+      .catch(function(){return {ok:false,error:"Sin conexión"};});
   });
 }
 
@@ -174,7 +180,7 @@ function guardar(){
       .then(function(res){
         st.editFila=null;st.editId=null;st.form=emptyForm();st.tab="historial";
         toast(res.local?"Editado localmente":"✓ Movimiento editado");
-        if(res.local){st.sincronizando=false;render();}else sincronizar();
+        setTimeout(function(){sincronizar();},3000);
       })
       .catch(function(){st.sincronizando=false;toast("Error al editar","err");render();});
   }else{
