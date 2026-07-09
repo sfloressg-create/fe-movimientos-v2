@@ -1,0 +1,16 @@
+[build]
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[functions."proxy"]
+  timeout = 30
+
+[functions."clasificar-background"]
+  timeout = 900
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
