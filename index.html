@@ -346,14 +346,38 @@ function consultarEstadoImport(jobId, intentos){
               var g=(CAT.grupos.indexOf(m.grupo)!==-1)?m.grupo:"Personal";
               var catsValidas=CAT.categorias[g]||["Gasto personal"];
               var cat=(catsValidas.indexOf(m.categoria)!==-1)?m.categoria:catsValidas[0];
+              var fecha=/^\d{4}-\d{2}-\d{2}$/.test(m.fecha||"")?m.fecha:todayISO();
               return {
-                          fecha:m.fecha||todayISO(), grupo:g, categoria:cat,
+                          fecha:fecha, grupo:g, categoria:cat,
                           medio:st.importMedio, naturaleza:CAT.naturaleza[g]||"Personal",
                           proyecto:m.proyecto||"", descripcion:m.descripcion||"", contraparte:m.contraparte||"",
                           total:String(m.total||"0").replace(/[$,\s]/g,""), factura:"No", estado:"Pagado",
                           confianza:m.confianza||"media", incluir:true
               };
     });
+          // Corrige el año: un estado de cuenta cubre un rango corto de fechas,
+          // así que si la IA se equivocó de año en algunos movimientos, usamos
+          // el año más frecuente del lote y corregimos los demás (mismo mes/día)
+          // para que no se inserten en la posición cronológica incorrecta.
+          (function(){
+                    var conteoAnios={};
+                    st.importMovs.forEach(function(m){
+                                var anio=(m.fecha||"").split("-")[0];
+                                if(anio)conteoAnios[anio]=(conteoAnios[anio]||0)+1;
+                    });
+                    var anioMasComun=null,maxCount=0;
+                    Object.keys(conteoAnios).forEach(function(a){
+                                if(conteoAnios[a]>maxCount){maxCount=conteoAnios[a];anioMasComun=a;}
+                    });
+                    if(anioMasComun){
+                                st.importMovs.forEach(function(m){
+                                              var partes=(m.fecha||"").split("-");
+                                              if(partes.length===3 && partes[0]!==anioMasComun){
+                                                              m.fecha=anioMasComun+"-"+partes[1]+"-"+partes[2];
+                                              }
+                                });
+                    }
+          })();
     if(!st.importMovs.length){toast("No se detectaron movimientos en el archivo","err");render();return;}
     toast("✓ "+st.importMovs.length+" movimientos detectados — revísalos abajo");
     render();
