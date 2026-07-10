@@ -33,7 +33,7 @@ exports.handler = async function(event, context) {
 
     // ── Ruta 2: registro manual → Apps Script hardcoded (saveRow, uploadFile) ──
     // Usado por la pantalla de registro manual de movimientos
-    const APPS_SCRIPT_HARDCODED = 'https://script.google.com/macros/s/AKfycbxyplkbjE1F4VqQXmeEh6miMTlCgbFWcosfq6sMlHDzyNsYOPV_lxbDsODTmMjnibytog/exec';
+    const APPS_SCRIPT_HARDCODED = 'https://script.google.com/macros/s/AKfycbzRZtiQRmrX0qBvNffls9IUGBLLHHQF4G4Xf8ZWo2lbkrPoVSXGLQ_2a6n_HlbDtkXVvw/exec';
     if (body.action === 'saveRow' || body.action === 'uploadFile') {
       const timeout = body.action === 'uploadFile' ? 28000 : 15000;
       const result = await postWithRedirects(APPS_SCRIPT_HARDCODED, JSON.stringify(body), 5, timeout);
