@@ -343,13 +343,16 @@ function consultarEstadoImport(jobId, intentos){
       toast(msgIA,"err");render();return;
     }
     st.importMovs=(data.movimientos||[]).map(function(m){
-      return {
-        fecha:m.fecha||todayISO(), grupo:m.grupo||"Personal", categoria:m.categoria||"Gasto personal",
-        medio:st.importMedio, naturaleza:CAT.naturaleza[m.grupo]||m.naturaleza||"Personal",
-        proyecto:m.proyecto||"", descripcion:m.descripcion||"", contraparte:m.contraparte||"",
-        total:String(m.total||"0").replace(/[$,\s]/g,""), factura:"No", estado:"Pagado",
-        confianza:m.confianza||"media", incluir:true
-      };
+              var g=(CAT.grupos.indexOf(m.grupo)!==-1)?m.grupo:"Personal";
+              var catsValidas=CAT.categorias[g]||["Gasto personal"];
+              var cat=(catsValidas.indexOf(m.categoria)!==-1)?m.categoria:catsValidas[0];
+              return {
+                          fecha:m.fecha||todayISO(), grupo:g, categoria:cat,
+                          medio:st.importMedio, naturaleza:CAT.naturaleza[g]||"Personal",
+                          proyecto:m.proyecto||"", descripcion:m.descripcion||"", contraparte:m.contraparte||"",
+                          total:String(m.total||"0").replace(/[$,\s]/g,""), factura:"No", estado:"Pagado",
+                          confianza:m.confianza||"media", incluir:true
+              };
     });
     if(!st.importMovs.length){toast("No se detectaron movimientos en el archivo","err");render();return;}
     toast("✓ "+st.importMovs.length+" movimientos detectados — revísalos abajo");
