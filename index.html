@@ -389,7 +389,7 @@ function consultarEstadoImport(jobId, intentos){
 
 function importSetCampo(i,campo,valor){
   st.importMovs[i][campo]=valor;
-  if(campo==="grupo"){st.importMovs[i].categoria="";st.importMovs[i].naturaleza=CAT.naturaleza[valor]||"";}
+if(campo==="grupo"){var catsNuevo=CAT.categorias[valor]||["Gasto personal"];st.importMovs[i].categoria=catsNuevo[0];st.importMovs[i].naturaleza=CAT.naturaleza[valor]||"";}
   render();
 }
 function importToggle(i){st.importMovs[i].incluir=!st.importMovs[i].incluir;render();}
