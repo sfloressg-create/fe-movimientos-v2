@@ -400,9 +400,15 @@ function confirmarImport(){
   if(!seleccionados.length){toast("No hay movimientos seleccionados","err");return;}
   for(var i=0;i<seleccionados.length;i++){
     var m=seleccionados[i];
-    if(!m.grupo||!m.categoria||!m.medio||!m.total||!m.fecha){
-      toast("Revisa el movimiento #"+(i+1)+" — faltan datos","err");return;
-    }
+          var faltan=[];
+          if(!m.grupo)faltan.push("grupo");
+          if(!m.categoria)faltan.push("categoría");
+          if(!m.medio)faltan.push("medio");
+          if(!m.total)faltan.push("total");
+          if(!m.fecha)faltan.push("fecha");
+          if(faltan.length){
+                    toast('Revisa "'+(m.descripcion||"movimiento #"+(i+1))+'" — falta: '+faltan.join(", "),"err");return;
+          }
   }
   st.importEnviando=true;render();
 
