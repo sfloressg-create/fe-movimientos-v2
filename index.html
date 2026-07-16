@@ -88,7 +88,7 @@ var ICONS = {
 
 var CAT = {
   grupos:["Ingresos","Evento — externo","Evento — inhouse","Evento — personal","Op. bodega/oficina","Op. negocio general","Devolucion","Personal"],
-  categorias:{"Ingresos":["Cobro cliente","Comisiones de proveedores"],"Evento — externo":["Venue","Catering","Música y sonido","Talento o happening","Experiencia","Fotografía y video","Mobiliario externo","Papelería","Maquillaje y peinado","Rehearsal dinner o welcome event","Planta de luz","Pastelería","Mesas de alimentos","Transporte evento","Logística externa","Otros externos"],"Evento — inhouse":["Flores y deco inhouse","Pista de baile, estrados y templetes","Barras de alcohol","Mobiliario inhouse","Styling en mesas","Iluminación inhouse","Otros inhouse","Transporte evento (inhouse)"],"Evento — personal":["Pago eventual","Asimilados a salarios","Honorarios Fiorella","Comisiones a socios"],"Op. bodega/oficina":["Sueldo administrativo bodega","Sueldo operativo bodega","Servicios bodega","Mantenimiento","Limpieza / seguridad","Seguros"],"Op. negocio general":["Suscripciones","Papelería / oficina","Herramienta / equipo","Gasolina negocio","Gasolina socios","Publicidad / marketing","Contabilidad / legal","Capacitación","Otros operativos","Pago a tarjeta bancaria"],"Devolucion":["Devolucion de deposito de garantia"],"Personal":["Gasto personal"]},
+  categorias:{"Ingresos":["Cobro cliente","Comisiones de proveedores"],"Evento — externo":["Venue","Catering","Música y sonido","Talento o happening","Experiencia","Fotografía y video","Mobiliario externo","Papelería","Maquillaje y peinado","Rehearsal dinner o welcome event","Planta de luz","Pastelería","Mesas de alimentos","Transporte evento","Logística externa","Otros externos"],"Evento — inhouse":["Flores y deco inhouse","Pista de baile, estrados y templetes","Barras de alcohol","Mobiliario inhouse","Styling en mesas","Iluminación inhouse","Otros inhouse","Transporte evento (inhouse)"],"Evento — personal":["Pago eventual","Asimilados a salarios","Honorarios Fiorella","Comisiones a socios"],"Op. bodega/oficina":["Sueldo administrativo bodega","Sueldo operativo bodega","Servicios bodega","Mantenimiento","Limpieza / seguridad","Seguros"],"Op. negocio general":["Suscripciones","Papelería / oficina","Herramienta / equipo","Gasolina negocio","Gasolina socios","Publicidad / marketing","Contabilidad / legal","Capacitación","Otros operativos","Pago a tarjeta bancaria","Estacionamientos"],"Devolucion":["Devolucion de deposito de garantia"],"Personal":["Gasto personal","Gasolina socios","Casetas","Luciana","Suscripciones","Estacionamientos"]},
   naturaleza:{"Ingresos":"Evento","Evento — externo":"Evento","Evento — inhouse":"Evento","Evento — personal":"Evento","Op. bodega/oficina":"Operativo negocio","Op. negocio general":"Operativo negocio","Devolucion":"Devolucion","Personal":"Personal"},
   estados:["Pagado","Pendiente","Parcial"],
   colores:{"Ingresos":"#0F6E56","Evento — externo":"#185FA5","Evento — inhouse":"#3B6D11","Evento — personal":"#534AB7","Op. bodega/oficina":"#5F5E5A","Op. negocio general":"#885F0B","Devolucion":"#A32D2D","Personal":"#993556"}
@@ -114,13 +114,13 @@ var st={
   importProcesando:false, importMovs:null, importEnviando:false, importMsg:""
 };
 
-function emptyForm(){return{fecha:todayISO(),grupo:"",categoria:"",medio:"",naturaleza:"",proyecto:"",descripcion:"",contraparte:"",total:"",factura:"No",estado:"Pagado"};}
+function emptyForm(){return{tipo:"gasto",fecha:todayISO(),grupo:"",categoria:"",medio:"",naturaleza:"",proyecto:"",descripcion:"",contraparte:"",total:"",factura:"No",estado:"Pagado"};}
 function persist(){localStorage.setItem("fe_movs",JSON.stringify(st.movs));localStorage.setItem("fe_proy",JSON.stringify(st.proy));localStorage.setItem("fe_medios",JSON.stringify(st.medios));}
 
 var tt=null;
 function toast(msg,type){if(tt)clearTimeout(tt);st.toast={msg:msg,type:type||"ok"};render();tt=setTimeout(function(){st.toast=null;render();},3000);}
 
-function setF(k,v){st.form[k]=v;if(k==="grupo"){st.form.categoria="";st.form.naturaleza=CAT.naturaleza[v]||"";}render();}
+function setF(k,v){st.form[k]=v;if(k==="grupo"){st.form.categoria="";st.form.naturaleza=CAT.naturaleza[v]||"";st.form.tipo=v==="Ingresos"?"ingreso":"gasto";}render();} function setTipo(t){var f=st.form;if(f.tipo===t)return;f.tipo=t;if(t==="ingreso"){f.grupo="Ingresos";f.categoria="";f.naturaleza=CAT.naturaleza["Ingresos"]||"";}else if(f.grupo==="Ingresos"){f.grupo="";f.categoria="";f.naturaleza="";}render();}
 
 /* ── Sincronización con el Sheet vía Apps Script ── */
 function apiConfigurada(){return API_URL && API_URL.indexOf("script.google.com")!==-1;}
@@ -203,7 +203,7 @@ function guardar(){
   }
 }
 
-function editarMov(m){st.form={fecha:m.fecha,grupo:m.grupo,categoria:m.categoria,medio:m.medio,naturaleza:m.naturaleza,proyecto:m.proyecto,descripcion:m.descripcion,contraparte:m.contraparte,total:String(m.total).replace(/[$,]/g,""),factura:m.factura,estado:m.estado};st.editFila=m.fila||null;st.editId=m.id;st.tab="nuevo";render();}
+function editarMov(m){st.form={tipo:m.grupo==="Ingresos"?"ingreso":"gasto",fecha:m.fecha,grupo:m.grupo,categoria:m.categoria,medio:m.medio,naturaleza:m.naturaleza,proyecto:m.proyecto,descripcion:m.descripcion,contraparte:m.contraparte,total:String(m.total).replace(/[$,]/g,""),factura:m.factura,estado:m.estado};st.editFila=m.fila||null;st.editId=m.id;st.tab="nuevo";render();}
 function cancelEd(){st.editFila=null;st.editId=null;st.form=emptyForm();render();}
 function eliminarMov(m){
   if(!confirm("¿Eliminar este movimiento?"))return;
@@ -449,8 +449,8 @@ function renderNuevo(){
        '<span style="font-size:13px;color:#854F0B;display:flex;align-items:center;gap:6px">'+ICONS.edit.replace(/width="18"/,'width="15"').replace(/height="18"/,'height="15"')+' Editando #'+esc(st.editId)+'</span>'+
        '<button onclick="cancelEd()" style="font-size:13px;color:#854F0B;text-decoration:underline">Cancelar</button></div>';
   }
-  h+='<div class="field">'+lbl("Fecha")+'<input id="f-fecha" type="date" value="'+esc(f.fecha)+'"></div>';
-  h+='<div class="field">'+lbl("Grupo",1)+'<select id="f-grupo"><option value="">— Selecciona grupo —</option>'+CAT.grupos.map(function(g){return '<option value="'+esc(g)+'"'+(f.grupo===g?" selected":"")+'>'+esc(g)+'</option>';}).join("")+'</select></div>';
+  h+='<div class="field"><div style="display:flex;gap:8px;background:var(--surface2);padding:4px;border-radius:var(--radius);border:0.5px solid var(--border)"><button type="button" onclick="setTipo(\'gasto\')" style="flex:1;padding:11px;border-radius:8px;font-weight:700;font-size:14px;background:'+(f.tipo!=="ingreso"?"var(--egr-bg)":"transparent")+';color:'+(f.tipo!=="ingreso"?"var(--egr)":"var(--text3)")+'">\u2212 Gasto</button><button type="button" onclick="setTipo(\'ingreso\')" style="flex:1;padding:11px;border-radius:8px;font-weight:700;font-size:14px;background:'+(f.tipo==="ingreso"?"var(--ing-bg)":"transparent")+';color:'+(f.tipo==="ingreso"?"var(--ing)":"var(--text3)")+'">+ Ingreso</button></div></div>'; h+='<div class="field">'+lbl("Fecha")+'<input id="f-fecha" type="date" value="'+esc(f.fecha)+'"></div>';
+  var gruposDisp=f.tipo==="ingreso"?CAT.grupos.filter(function(g){return g==="Ingresos";}):CAT.grupos.filter(function(g){return g!=="Ingresos";}); h+='<div class="field">'+lbl("Grupo",1)+'<select id="f-grupo"'+(f.tipo==="ingreso"?" disabled":"")+'><option value="">— Selecciona grupo —</option>'+gruposDisp.map(function(g){return '<option value="'+esc(g)+'"'+(f.grupo===g?" selected":"")+'>'+esc(g)+'</option>';}).join("")+'</select></div>';
   h+='<div class="field">'+lbl("Categoría",1)+'<select id="f-cat"'+(!f.grupo?" disabled":"")+'><option value="">— Selecciona categoría —</option>'+cats.map(function(c){return '<option value="'+esc(c)+'"'+(f.categoria===c?" selected":"")+'>'+esc(c)+'</option>';}).join("")+'</select></div>';
   h+='<div class="field">'+lbl("Medio / Cuenta",1)+'<select id="f-medio"><option value="">— Selecciona cuenta —</option>'+st.medios.map(function(m){return '<option value="'+esc(m)+'"'+(f.medio===m?" selected":"")+'>'+esc(m)+'</option>';}).join("")+'</select></div>';
   if(f.naturaleza){h+='<div class="field" style="display:flex;align-items:center;gap:8px"><span class="lbl" style="margin:0">Naturaleza</span><span style="font-size:13px;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius);padding:4px 11px;color:var(--text2)">⚡ '+esc(f.naturaleza)+'</span><span style="font-size:11px;color:var(--text3)">automático</span></div>';}
