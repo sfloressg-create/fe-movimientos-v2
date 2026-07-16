@@ -93,7 +93,7 @@ var CAT = {
   estados:["Pagado","Pendiente","Parcial"],
   colores:{"Ingresos":"#0F6E56","Evento — externo":"#185FA5","Evento — inhouse":"#3B6D11","Evento — personal":"#534AB7","Op. bodega/oficina":"#5F5E5A","Op. negocio general":"#885F0B","Devolucion":"#A32D2D","Personal":"#993556"}
 };
-var MEDIOS_DEF=["Efectivo","BBVA Débito SF","BBVA Oro SF","Amex SF","Stori SF","Kasady (Afirme)","BBVA Débito STAM","Banamex STAM","Kasady STAM"];
+var MEDIOS_DEF=["Efectivo","BBVA Débito SF","BBVA Oro SF","Amex SF","Stori SF","Kasady (Afirme)","BBVA Débito STAM","Banamex STAM","Kasady STAM","Banamex JM","Santander JM","Stori JM","Didi JM"];
 var PROY_DEF=["A · Valeria & Edward · 24 Oct 2026","B · Guadalupe y Nicholas · 2027","C · Dany y Juan · 12 Mar 2027","D · Sunny and Matt · TBD","H · Fernanda & Emiliano · 30 May 2026","J · Christina and Deandre · 3 Oct 2026","K · Erin e Ivan · TBD","L · Wen & Nithin · 20 Nov 2026","M · Anna & Beckett · 25 Abr 2026","N · Krystal y Christopher · 22 Nov 2026","O · Aranza y Jose · 3 Abr 2027","P · Begoña y Manuel · 27 Feb 2027","Q · Xime y Rafa · 6 Nov 2027","Personal","Operativo","(otro)"];
 
 function fmtMXN(n){var num=parseFloat(String(n||0).replace(/[$,\s]/g,""));return isNaN(num)?"—":new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2}).format(num);}
@@ -106,7 +106,7 @@ var st={
   editFila:null, editId:null,
   movs:JSON.parse(localStorage.getItem("fe_movs")||"[]"),
   proy:JSON.parse(localStorage.getItem("fe_proy")||"null")||PROY_DEF.slice(),
-  medios:JSON.parse(localStorage.getItem("fe_medios")||"null")||MEDIOS_DEF.slice(),
+  medios:(function(){var s=JSON.parse(localStorage.getItem("fe_medios")||"null");if(!s)return MEDIOS_DEF.slice();MEDIOS_DEF.forEach(function(m){if(s.indexOf(m)<0)s.push(m);});return s;})(),
   filtro:"", toast:null, sincronizando:false, edProy:null, edMedio:null,
   deferredPrompt:null,
   claudeKey:localStorage.getItem("fe_claude_key")||"",
