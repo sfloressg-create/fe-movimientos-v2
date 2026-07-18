@@ -42,6 +42,7 @@ exports.handler = async function(event, context) {
 
       // ── Ruta 3: flujo de importación de estados de cuenta (payload + appsScriptUrl) ──
       // Usado por la tab Importar: guardar_archivo_job, crear_lote, leer_job, etc.
+      // También usado por el flujo normal de registro manual: crear, editar, borrar.
       const appsScriptUrl = body.appsScriptUrl;
           if (!appsScriptUrl || !appsScriptUrl.includes('script.google.com')) {
                   return {
@@ -50,15 +51,18 @@ exports.handler = async function(event, context) {
                   };
           }
 
-      // Acciones con payload grande van por POST
-      const accionesPost = ['guardar_archivo_job', 'leer_archivo_job', 'limpiar_archivo_job', 'crear_lote', 'guardar_job'];
-
+      // IMPORTANTE: TODAS las acciones con payload van por POST (nunca por GET
+      // con el payload en la query string). El camino GET + query string era
+      // frágil: para lotes grandes truncaba la URL ("Failed to fetch"), y para
+      // movimientos individuales (crear/editar/borrar) también podía perder o
+      // corromper datos en el trayecto, provocando que Apps Script escribiera
+      // una fila a medias (por ejemplo, solo la fecha) antes de fallar por una
+      // validación de datos con un valor vacío o incorrecto. POST con el body
+      // como JSON es mucho más confiable y es lo que Apps Script espera leer
+      // en doPost (e.postData.contents).
       let response;
-          if (body.payload && accionesPost.includes(body.payload.accion)) {
+          if (body.payload) {
                   response = await postWithRedirects(appsScriptUrl, JSON.stringify(body.payload), 5, 28000);
-          } else if (body.payload) {
-                  const url = appsScriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(body.payload));
-                  response = await getWithRedirects(url, 5);
           } else {
                   response = await getWithRedirects(appsScriptUrl, 5);
           }
