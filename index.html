@@ -109,7 +109,7 @@ function naturalezaDe(grupo,categoria){
   var uniq=vals.filter(function(x,i){return vals.indexOf(x)===i;});
   return uniq.length===1?uniq[0]:"";
 }
-var MEDIOS_DEF=["Efectivo","BBVA Débito SF","BBVA Oro SF","Amex SF","Stori SF","Kasady (Afirme)","BBVA Débito STAM","Banamex STAM","Kasady STAM","Banamex JM","Santander JM","Stori JM","Didi JM"];
+var MEDIOS_DEF=["Efectivo SF","Kasady (Afirme)","BBVA Débito — SF","BBVA Oro — SF","Amex — SF","Stori — SF","Banamex STAM","BBVA Crédito — SF","Santander JM","Banamex JM","Efectivo JM","Banorte credito JM","Banorte debito SF","Stori JM","Didi JM"];
 var PROY_DEF=["A · Valeria & Edward · 24 Oct 2026","B · Guadalupe y Nicholas · 2027","C · Dany y Juan · 12 Mar 2027","D · Sunny and Matt · TBD","H · Fernanda & Emiliano · 30 May 2026","J · Christina and Deandre · 3 Oct 2026","K · Erin e Ivan · TBD","L · Wen & Nithin · 20 Nov 2026","M · Anna & Beckett · 25 Abr 2026","N · Krystal y Christopher · 22 Nov 2026","O · Aranza y Jose · 3 Abr 2027","P · Begoña y Manuel · 27 Feb 2027","Q · Xime y Rafa · 6 Nov 2027","Personal","Operativo","(otro)"];
 
 function fmtMXN(n){var num=parseFloat(String(n||0).replace(/[$,\s]/g,""));return isNaN(num)?"—":new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2}).format(num);}
@@ -122,8 +122,18 @@ var st={
   editFila:null, editId:null,
   movs:JSON.parse(localStorage.getItem("fe_movs")||"[]"),
   proy:JSON.parse(localStorage.getItem("fe_proy")||"null")||PROY_DEF.slice(),
-  medios:(function(){var s=JSON.parse(localStorage.getItem("fe_medios")||"null");if(!s)return MEDIOS_DEF.slice();MEDIOS_DEF.forEach(function(m){if(s.indexOf(m)<0)s.push(m);});return s;})(),
-  filtro:"", toast:null, sincronizando:false, edProy:null, edMedio:null,
+  medios:(function(){
+    var s=JSON.parse(localStorage.getItem("fe_medios")||"null");
+    if(!s)return MEDIOS_DEF.slice();
+    // Corrige nombres de cuentas guardados en el teléfono con formato viejo
+    // (sin guion largo) que ya no coinciden con la validación del Sheet.
+    var mapaLegado={"Efectivo":"Efectivo SF","BBVA Débito SF":"BBVA Débito — SF","BBVA Oro SF":"BBVA Oro — SF","Amex SF":"Amex — SF","Stori SF":"Stori — SF"};
+    s=s.map(function(m){return mapaLegado[m]!==undefined?mapaLegado[m]:m;});
+    s=s.filter(function(m,i){return s.indexOf(m)===i;});
+    MEDIOS_DEF.forEach(function(m){if(s.indexOf(m)<0)s.push(m);});
+    return s;
+  })(),
+  filtro:"", toast:null, sincronizando:false, guardando:false, edProy:null, edMedio:null,
   deferredPrompt:null,
   claudeKey:localStorage.getItem("fe_claude_key")||"",
   importMedio:"", importArchivo:null, importNombreArchivo:"",
@@ -194,19 +204,35 @@ function enviarAlSheet(accion,movimiento,fila){
 function guardar(){
   var f=st.form;
   if(!f.grupo||!f.categoria||!f.medio||!f.total){toast("Completa: Grupo, Categoría, Medio y Total","err");return;}
+  if(st.guardando)return; // evita doble envío por doble-tap
+  st.guardando=true;
   st.sincronizando=true;render();
 
   if(st.editFila!==null){
     enviarAlSheet("editar",Object.assign({},f,{id:st.editId}),st.editFila)
       .then(function(res){
+        st.guardando=false;
+        if(!res.ok && !res.local){
+          st.sincronizando=false;
+          toast("No se pudo editar: "+(res.error||"el servidor rechazó el cambio"),"err");
+          render();
+          return;
+        }
         st.editFila=null;st.editId=null;st.form=emptyForm();st.tab="historial";
         toast(res.local?"Editado localmente":"✓ Movimiento editado");
         setTimeout(function(){sincronizar();},3000);
       })
-      .catch(function(){st.sincronizando=false;toast("Error al editar","err");render();});
+      .catch(function(){st.guardando=false;st.sincronizando=false;toast("Error al editar","err");render();});
   }else{
     enviarAlSheet("crear",f)
       .then(function(res){
+        st.guardando=false;
+        if(!res.ok && !res.local){
+          st.sincronizando=false;
+          toast("No se pudo registrar: "+(res.error||"el servidor rechazó el movimiento"),"err");
+          render();
+          return;
+        }
         st.form=emptyForm();st.tab="historial";
         toast(res.local?"Guardado localmente":"✓ Movimiento #"+res.id+" registrado");
         if(res.local){
@@ -215,7 +241,7 @@ function guardar(){
           persist();st.sincronizando=false;render();
         }else sincronizar();
       })
-      .catch(function(){st.sincronizando=false;toast("Error al guardar","err");render();});
+      .catch(function(){st.guardando=false;st.sincronizando=false;toast("Error al guardar","err");render();});
   }
 }
 
@@ -476,7 +502,7 @@ function renderNuevo(){
   h+='<div class="field">'+lbl("Contraparte")+'<input id="f-cont" type="text" placeholder="Ej: DJ Ramón, Amazon…" value="'+esc(f.contraparte)+'"></div>';
   h+='<div class="field">'+lbl("Total MXN",1)+'<div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none">$</span><input id="f-total" type="number" inputmode="decimal" placeholder="0.00" value="'+esc(f.total)+'" style="padding-left:26px;font-size:19px;font-weight:600"></div>'+(f.total?'<p style="font-size:13px;color:var(--text3);margin-top:5px">'+fmtMXN(f.total)+'</p>':'')+'</div>';
   h+='<div style="display:flex;gap:12px;margin-bottom:20px"><div style="flex:1">'+lbl("¿Factura SAT?")+'<select id="f-fac"><option'+(f.factura==="No"?" selected":"")+'>No</option><option'+(f.factura==="Sí"?" selected":"")+'>Sí</option></select></div><div style="flex:1">'+lbl("Estado de pago")+'<select id="f-est">'+CAT.estados.map(function(e){return '<option'+(f.estado===e?" selected":"")+'>'+e+'</option>';}).join("")+'</select></div></div>';
-  h+='<button class="btn-primary" onclick="guardar()">'+(st.editFila!==null||st.editId!==null?ICONS.check+" Guardar cambios":ICONS.save+" Registrar movimiento")+'</button>';
+  h+='<button class="btn-primary"'+(st.guardando?' disabled style="opacity:0.6;pointer-events:none"':'')+' onclick="guardar()">'+(st.guardando?"Guardando…":(st.editFila!==null||st.editId!==null?ICONS.check+" Guardar cambios":ICONS.save+" Registrar movimiento"))+'</button>';
   return h;
 }
 
