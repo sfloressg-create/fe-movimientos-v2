@@ -530,12 +530,19 @@ function renderResumen(){
   if(!st.resumenMes)st.resumenMes=mesActualKey;
 
   // Agrupar por el campo "mes" exacto que viene del Sheet (col J: jun-26, jul-26...)
+  // Los movimientos sin mes valido se omiten (no se crea un bucket "(sin mes)").
   var porMes={};
   ms.forEach(function(m){
-    var key=m.mes||"(sin mes)";
+    var key=m.mes;
+    if(!key)return;
     if(!porMes[key])porMes[key]={ingresos:0,egresos:0,count:0};
+    // El total se guarda en el Sheet con signo negativo para todo lo que no
+    // sea Ingresos, así que aquí sumamos el egreso como magnitud positiva.
+    // Si no, "ingresos - egresos" termina SUMANDO los gastos en vez de
+    // restarlos (flujo neto invertido) y el "-"+fmtMXN(egresos) sale doble
+    // negativo en la lista de meses.
     if(m.grupo==="Ingresos")porMes[key].ingresos+=(m.totalNum||0);
-    else porMes[key].egresos+=(m.totalNum||0);
+    else porMes[key].egresos+=Math.abs(m.totalNum||0);
     porMes[key].count++;
   });
 
